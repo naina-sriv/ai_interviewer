@@ -17,11 +17,11 @@ const InterviewPage = () => {
     const [loading, setLoading] = useState(false);
 
     const onAutoSubmit = async (finalText) => {
-        stopListening();
-
         if(!finalText.trim()) {
-            return;
+            return; // Ignore empty noise, keep listening
         }
+
+        stopListening();
 
         // submit endpoint
         const payload = {

@@ -1,27 +1,23 @@
-// Start Micropone
-// Convert speech to text
-// detct 3sec pause/ slience
-// auomitically call a callback function execute
-// SpeechRecognition
-
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 
 export const useSpeechToText = (onSilence) => {
-  const recognitionRef = useRef(""); // SpeechRecognition
-  const slienceTimeRef = useRef("");
+  const recognitionRef = useRef(null);
+  const slienceTimeRef = useRef(null);
   const onSlienceRef = useRef(onSilence);
   const transcriptRef = useRef("");
-  const [transcript, setTranscript] = useState("");
+  const interimRef = useRef("");
+  const isListeningRef = useRef(false);
 
   useEffect(() => {
     onSlienceRef.current = onSilence;
   }, [onSilence]);
 
-  useEffect(() => {
-    transcriptRef.current = transcript;
-  }, [transcript]);
-
   const startListening = () => {
+    // Clear previous transcript across different questions
+    transcriptRef.current = "";
+    interimRef.current = "";
+    isListeningRef.current = true;
+
     const SpeechRecognition =
       window.SpeechRecognition || window.webkitSpeechRecognition;
 
@@ -36,25 +32,26 @@ export const useSpeechToText = (onSilence) => {
     recognition.interimResults = true;
 
     recognition.onresult = (event) => {
-      let finalText = "";
-      let interimText = "";
+      let currentFinal = "";
+      let currentInterim = "";
 
       for (let i = event.resultIndex; i < event.results.length; i++) {
         const result = event.results[i];
-        const transcript = result[0].transcript;
+        const text = result[0].transcript;
 
         if (result.isFinal) {
-          finalText += transcript;
+          currentFinal += text;
         } else {
-          interimText += transcript;
+          currentInterim += text;
         }
       }
 
-      if (finalText) {
-        setTranscript((prev) => (prev + " " + finalText).trim());
+      if (currentFinal) {
+        transcriptRef.current = (transcriptRef.current + " " + currentFinal).trim();
       }
+      interimRef.current = currentInterim;
 
-      if (finalText || interimText) {
+      if (currentFinal || currentInterim) {
         resetSilenceTimer();
       }
     };
@@ -63,20 +60,41 @@ export const useSpeechToText = (onSilence) => {
       console.error("SpeechRecognition error", error);
     };
 
-    recognition.start();
-    recognitionRef.current = recognition;
+    recognition.onend = () => {
+      // Chrome often stops listening automatically after a pause.
+      // If we haven't manually stopped it, restart it automatically!
+      if (isListeningRef.current) {
+        try {
+          recognition.start();
+        } catch (e) {
+          console.error("Failed to restart recognition", e);
+        }
+      }
+    };
+
+    try {
+      recognition.start();
+      recognitionRef.current = recognition;
+    } catch (e) {
+      console.error("Failed to start recognition", e);
+    }
   };
 
   const resetSilenceTimer = () => {
     clearTimeout(slienceTimeRef.current);
 
     slienceTimeRef.current = setTimeout(() => {
-      onSlienceRef.current(transcriptRef.current);
+      // Use both final and interim text in case the last word wasn't marked final
+      const fullText = (transcriptRef.current + " " + interimRef.current).trim();
+      onSlienceRef.current(fullText);
     }, 3000);
   };
 
   const stopListening = () => {
-    recognitionRef.current?.stop();
+    isListeningRef.current = false;
+    if (recognitionRef.current) {
+      recognitionRef.current.stop();
+    }
     clearTimeout(slienceTimeRef.current);
   };
 
