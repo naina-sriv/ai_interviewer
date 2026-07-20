@@ -8,6 +8,7 @@ const MAX_FILE_SIZE = 5 * 1024 * 1024;
 
 const StartInterview = ({onClick}) => {
     const [jobTitle, setJobTitle] = useState("");
+    const [company, setCompany] = useState("");
     const [jobDescription, setJobDescription] = useState("");
     const [resume, setResume] = useState(null);
     const [error, setError] = useState("");
@@ -44,7 +45,7 @@ const StartInterview = ({onClick}) => {
         e.preventDefault();
 
         if(!jobTitle || !jobDescription || !resume) {
-            setError("All fields are required!!!");
+            setError("All fields except company are required!!!");
             return;
         }
 
@@ -56,6 +57,7 @@ const StartInterview = ({onClick}) => {
             const formData = new FormData();
             formData.append("job_title", jobTitle);
             formData.append("job_description", jobDescription);
+            formData.append("company", company); // Added company field
             formData.append("resume", resume);
 
             // generate question endpoint
@@ -90,6 +92,16 @@ const StartInterview = ({onClick}) => {
                     required
                     value={jobTitle}
                     onChange={e => setJobTitle(e.target.value)}
+                />
+            </div>
+
+             <div className="form-group">
+                <label>Target Company (Optional)</label>
+                <input 
+                    type="text"
+                    placeholder="e.g. Google, Amazon, Meta"
+                    value={company}
+                    onChange={e => setCompany(e.target.value)}
                 />
             </div>
 

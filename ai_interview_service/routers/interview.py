@@ -16,6 +16,7 @@ router = APIRouter(
 async def init_interview_context(
     job_title: str = Form(...),
     job_description: str = Form(...),
+    company: str = Form(default=""),
     resume: UploadFile = File(...)
 ):
     # Validate resume file
@@ -24,8 +25,18 @@ async def init_interview_context(
     # Extract text from resume
     resume_text = await extract_text(resume)
 
-    # Generate questions and intro text using title, decription, resume content
-    context_data = await create_interview_context(job_title=job_title, job_description=job_description, resume_text=resume_text)
+    # Get company questions if company is provided
+    from ai_interview_service.util.company_db import get_company_questions
+    company_questions = get_company_questions(company)
+
+    # Generate questions and intro text using title, decription, resume content, and company context
+    context_data = await create_interview_context(
+        job_title=job_title, 
+        job_description=job_description, 
+        resume_text=resume_text,
+        company=company,
+        company_questions=company_questions
+    )
 
     session = create_session()
     session.questions = context_data.get("questions")

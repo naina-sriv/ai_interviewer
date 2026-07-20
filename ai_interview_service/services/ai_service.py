@@ -45,7 +45,16 @@ async def call_ai_api(system_prompt: str, prompt: str) -> dict:
 
 
 
-async def create_interview_context(job_title: str, job_description: str, resume_text: str):
+async def create_interview_context(job_title: str, job_description: str, resume_text: str, company: str = "", company_questions: list = None):
+    import json
+    company_context = ""
+    if company and company_questions:
+        company_context = f"""
+        - The candidate is specifically preparing for an interview at {company}.
+        - Use these commonly asked {company} questions as inspiration to tailor the interview: {json.dumps(company_questions)}
+        - Ensure the questions you generate feel like they belong in a {company} interview while still matching the candidate's skills and the job description.
+        """
+
     SYSTEM_PROMPT = f"""
         You are an AI interview expert, who generates questions based on candidate's job_title, job_description, resume_text.
         You need to find out candidate's name, you need to generate an introduction text including candidate's name, you need to generate questions
@@ -63,11 +72,11 @@ async def create_interview_context(job_title: str, job_description: str, resume_
 
         Rules:
             - For Questions:
-                a) Generate 2-3 questions.
+                a) Generate 5-6 questions.
                 b) Consider years of experince to label of difficulty of interview questions.
                 c) Questions should be easy to hard manner.
                 d) Questions related to only Skills metioned in resume, job_description and job_title
-                e) Questions are needs to be small and to the point and some time scenario based.
+                e) Questions are needs to be small and to the point and some time scenario based.{company_context}
             - For Introduction Text:
                 a) It's simple text introduction which is going to played on brower before starting the interview
                 b) Include candidate name, job title in the text.
