@@ -1,6 +1,6 @@
 import json
+import httpx
 import os
-import google.generativeai as genai
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -9,37 +9,44 @@ async def call_gemini_api(system_prompt: str, prompt: str) -> dict:
     api_key = os.environ.get("GEMINI_API_KEY")
     if not api_key:
         raise Exception("GEMINI_API_KEY environment variable is not set")
-        
-    genai.configure(api_key=api_key)
-    
-    # Use gemini-1.5-flash, or fallback to gemini-pro if needed
-    model = genai.GenerativeModel(
-        model_name='gemini-1.5-flash',
-        system_instruction=system_prompt,
-        generation_config={"response_mime_type": "application/json"}
-    )
-    
-    try:
-        response = model.generate_content(prompt)
-        return json.loads(response.text.strip())
-    except Exception as e:
-        print(f"Failed to parse Gemini response or API error: {e}")
-        
-        # Fallback to gemini-pro if 1.5-flash is not available for this key
+
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={api_key}"
+
+    headers = {
+        "Content-Type": "application/json"
+    }
+
+    payload = {
+        "systemInstruction": {
+            "parts": [{"text": system_prompt}]
+        },
+        "contents": [
+            {
+                "parts": [{"text": prompt}]
+            }
+        ],
+        "generationConfig": {
+            "responseMimeType": "application/json"
+        }
+    }
+
+    async with httpx.AsyncClient() as client:
+        response = await client.post(url, headers=headers, json=payload, timeout=60.0)
+
+        if response.status_code != 200:
+            print(f"Gemini API Error: {response.status_code} - {response.text}")
+            raise Exception(f"Failed to call Gemini API: {response.status_code} - {response.text}")
+
+        data = response.json()
+
         try:
-            print("Falling back to gemini-pro model...")
-            fallback_model = genai.GenerativeModel('gemini-pro')
-            combined_prompt = f"{system_prompt}\n\nUser Request:\n{prompt}\n\nPlease respond in valid JSON format."
-            response = fallback_model.generate_content(combined_prompt)
-            # Try to strip markdown JSON blocks if present
-            clean_text = response.text.strip()
-            if clean_text.startswith("```json"):
-                clean_text = clean_text[7:]
-            if clean_text.endswith("```"):
-                clean_text = clean_text[:-3]
-            return json.loads(clean_text.strip())
-        except Exception as fallback_e:
-            raise Exception(f"Failed to call Gemini API: {e} | Fallback error: {fallback_e}")
+            text_response = data['candidates'][0]['content']['parts'][0]['text']
+            return json.loads(text_response.strip())
+        except (KeyError, IndexError, json.JSONDecodeError) as e:
+            print(f"Failed to parse Gemini response: {e}")
+            raise Exception("Invalid response format from Gemini")
+
+
 
 async def create_interview_context(job_title: str, job_description: str, resume_text: str):
     SYSTEM_PROMPT = f"""
