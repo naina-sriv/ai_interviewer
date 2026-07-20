@@ -1,11 +1,11 @@
 from fastapi import APIRouter, File, Form, HTTPException, UploadFile, status
 
-from models.interview import InteriewStatusEnum
-from request_model.AnswerRequest import AnswerRequest
-from response_model.AnswerResponse import AnswerResponse
-from services.ai_service import create_interview_context, evaluate_interview_answers, generate_followup
-from services.interview_service import create_session, get_session, save_answer
-from util.file_util import extract_text, validate_file
+from ai_interview_service.models.interview import InteriewStatusEnum
+from ai_interview_service.request_model.AnswerRequest import AnswerRequest
+from ai_interview_service.response_model.AnswerResponse import AnswerResponse
+from ai_interview_service.services.ai_service import create_interview_context, evaluate_interview_answers, generate_followup
+from ai_interview_service.services.interview_service import create_session, get_session, save_answer
+from ai_interview_service.util.file_util import extract_text, validate_file
 
 router = APIRouter(
     prefix="/interview",
@@ -90,7 +90,7 @@ async def submit_answer(answerReq: AnswerRequest):
         # But we need to undo the index advance that save_answer did
         session.current_index -= 1
         session.status = InteriewStatusEnum.IN_PROGRESS
-        from store.session_store import session_store
+        from ai_interview_service.store.session_store import session_store
         session_store.save_session(session)
 
         return {
@@ -101,7 +101,7 @@ async def submit_answer(answerReq: AnswerRequest):
     else:
         # Moving to next main question — reset followup count
         session.followup_count = 0
-        from store.session_store import session_store
+        from ai_interview_service.store.session_store import session_store
         session_store.save_session(session)
 
         next_question = session.questions[session.current_index]

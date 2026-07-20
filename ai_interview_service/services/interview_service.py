@@ -1,6 +1,6 @@
 import uuid
-from models.interview import Answer, InterviewSession, InteriewStatusEnum
-from store.session_store import session_store
+from ai_interview_service.models.interview import Answer, InterviewSession, InteriewStatusEnum
+from ai_interview_service.store.session_store import session_store
 
 
 def create_session() -> InterviewSession:

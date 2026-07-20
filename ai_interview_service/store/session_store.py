@@ -1,7 +1,7 @@
 import os
 import json
 from typing import Dict, Optional
-from models.interview import InterviewSession
+from ai_interview_service.models.interview import InterviewSession
 
 class SessionStore:
     def __init__(self):
