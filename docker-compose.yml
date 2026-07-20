@@ -1,10 +1,10 @@
 services:
-  backend-api:
-    build: ./ai_interview_frontend/api
+  backend:
+    build: ./ai_interview_service
     ports:
       - "8000:8000"
     volumes:
-      - ./ai_interview_frontend/api:/app
+      - ./ai_interview_service:/app
     environment:
       - GEMINI_API_KEY=${GEMINI_API_KEY}
     networks:
