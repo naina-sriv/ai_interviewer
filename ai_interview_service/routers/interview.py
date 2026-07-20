@@ -3,7 +3,7 @@ from fastapi import APIRouter, File, Form, HTTPException, UploadFile, status
 from models.interview import InteriewStatusEnum
 from request_model.AnswerRequest import AnswerRequest
 from response_model.AnswerResponse import AnswerResponse
-from services.ai_service import create_interview_context, evaluate_interview_answers
+from services.ai_service import create_interview_context, evaluate_interview_answers, generate_followup
 from services.interview_service import create_session, get_session, save_answer
 from util.file_util import extract_text, validate_file
 
@@ -48,27 +48,68 @@ async def start_interview(session_id: str):
     }
 
 
-@router.post("/submit", response_model=AnswerResponse)
+@router.post("/submit")
 async def submit_answer(answerReq: AnswerRequest):
     # Check valid session_id
     session = get_session(answerReq.session_id)
     if not session or session.status == InteriewStatusEnum.COMPLETED:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Interview Session Not Found")
 
+    # The question the candidate just answered
+    current_question = session.questions[session.current_index]
 
     # save answer in interview session
     save_answer(answerReq.answer, answerReq.skip, session)
 
-    # return
+    # If all main questions are done after saving, end the interview
     if session.status == InteriewStatusEnum.COMPLETED:
         return {
-            "interviewEnded": True
+            "interviewEnded": True,
+            "responseText": "Thank you so much for your time! That wraps up our interview. Let me prepare your report."
         }
-    
-    return {
-        "interviewEnded": False,
-        "nextQuestion": session.questions[session.current_index]
-    }
+
+    # Get remaining questions for context
+    remaining_questions = session.questions[session.current_index:]
+
+    # Generate a conversational follow-up using AI
+    followup_data = await generate_followup(
+        question=current_question,
+        answer=answerReq.answer or "",
+        remaining_questions=remaining_questions,
+        was_skipped=answerReq.skip
+    )
+
+    response_text = followup_data.get("response_text", "")
+    followup_question = followup_data.get("followup_question")
+    move_to_next = followup_data.get("move_to_next", True)
+
+    # If AI wants a follow-up and we haven't hit the limit (1 follow-up per main question)
+    if followup_question and not move_to_next and session.followup_count < 1:
+        session.followup_count += 1
+        # Don't advance current_index — we're still on the same main question
+        # But we need to undo the index advance that save_answer did
+        session.current_index -= 1
+        session.status = InteriewStatusEnum.IN_PROGRESS
+        from store.session_store import session_store
+        session_store.save_session(session)
+
+        return {
+            "interviewEnded": False,
+            "responseText": response_text,
+            "nextQuestion": followup_question
+        }
+    else:
+        # Moving to next main question — reset followup count
+        session.followup_count = 0
+        from store.session_store import session_store
+        session_store.save_session(session)
+
+        next_question = session.questions[session.current_index]
+        return {
+            "interviewEnded": False,
+            "responseText": response_text,
+            "nextQuestion": next_question
+        }
 
 @router.put("/end/{session_id}")
 async def end_interview(session_id: str):

@@ -126,3 +126,39 @@ async def evaluate_interview_answers(answers: list):
     """
     
     return await call_ai_api(SYSTEM_PROMPT, "Generate JSON output based on system instruction.")
+
+
+async def generate_followup(question: str, answer: str, remaining_questions: list[str], was_skipped: bool) -> dict:
+    SYSTEM_PROMPT = f"""
+        You are a warm, conversational AI interviewer conducting a technical interview.
+        The candidate just answered (or skipped) a question. Your job is to:
+        
+        1. Provide a brief, natural conversational comment acknowledging their answer (1-2 sentences max).
+        2. Decide whether to ask a follow-up question that digs deeper, OR move to the next main question.
+        
+        Current Question: {question}
+        Candidate's Answer: {"[SKIPPED]" if was_skipped else answer}
+        Remaining Main Questions: {json.dumps(remaining_questions)}
+        
+        Rules:
+        - If the candidate skipped, be encouraging and move to the next question. Don't dwell on it.
+        - If the answer is interesting but shallow, ask a follow-up to dig deeper.
+        - If the answer is thorough, compliment them and move to the next main question.
+        - Keep your conversational comment warm and natural (like a real interviewer would speak).
+        - The follow-up should feel like a natural continuation, not a new topic.
+        - If there are no remaining questions and no follow-up needed, set move_to_next to true.
+        
+        Output JSON format:
+        {{
+            "response_text": "Your conversational comment acknowledging their answer",
+            "followup_question": "A follow-up question if needed, or null",
+            "move_to_next": true/false
+        }}
+        
+        Examples:
+        - Good response_text: "That's a great point about dependency injection! I like how you connected it to testing."
+        - Good followup: "You mentioned using constructor injection — can you walk me through a scenario where setter injection might be more appropriate?"
+        - Good transition: "Excellent breakdown! Let's move on to something different."
+    """
+    
+    return await call_ai_api(SYSTEM_PROMPT, "Generate JSON output based on system instruction.")

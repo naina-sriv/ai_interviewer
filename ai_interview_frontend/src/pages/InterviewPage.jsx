@@ -32,12 +32,25 @@ const InterviewPage = () => {
         const data = await submitAPI(payload);
 
         if(data.interviewEnded) {
-            // Report generate
-            finshInterview();
+            // Play closing remark, then show report
+            if(data.responseText) {
+                playAudio(data.responseText, () => {
+                    finshInterview();
+                });
+            } else {
+                finshInterview();
+            }
         } else {
-            // Ask next question
+            // Play AI's conversational comment, then ask next question
             setQuestion(data.nextQuestion);
-            setStatus(APP_CONSTANT.ASKING);
+            if(data.responseText) {
+                setStatus(APP_CONSTANT.INTRO);
+                playAudio(data.responseText, () => {
+                    setStatus(APP_CONSTANT.ASKING);
+                });
+            } else {
+                setStatus(APP_CONSTANT.ASKING);
+            }
         }
     }
 
@@ -80,12 +93,24 @@ const InterviewPage = () => {
         const data = await submitAPI(payload);
 
         if(data.interviewEnded) {
-            // Report generate
-            finshInterview();
+            if(data.responseText) {
+                playAudio(data.responseText, () => {
+                    finshInterview();
+                });
+            } else {
+                finshInterview();
+            }
         } else {
-            // Ask next question
+            // Play AI's conversational comment, then ask next question
             setQuestion(data.nextQuestion);
-            setStatus(APP_CONSTANT.ASKING);
+            if(data.responseText) {
+                setStatus(APP_CONSTANT.INTRO);
+                playAudio(data.responseText, () => {
+                    setStatus(APP_CONSTANT.ASKING);
+                });
+            } else {
+                setStatus(APP_CONSTANT.ASKING);
+            }
         }
     }
 

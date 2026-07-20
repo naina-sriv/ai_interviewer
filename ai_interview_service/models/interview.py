@@ -19,3 +19,4 @@ class InterviewSession(BaseModel):
     answers: list[Answer] = []
     current_index: int = 0
     introText: str = ""
+    followup_count: int = 0
