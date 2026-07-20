@@ -21,7 +21,7 @@ app.add_middleware(
 )
 
 # Local development route
-app.include_router(interview_router, prefix="/interview")
+app.include_router(interview_router)
 
 # Vercel Serverless route
-app.include_router(interview_router, prefix="/api/interview")
+app.include_router(interview_router, prefix="/api")
