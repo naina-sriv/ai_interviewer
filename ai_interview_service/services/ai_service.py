@@ -5,46 +5,43 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-async def call_gemini_api(system_prompt: str, prompt: str) -> dict:
-    api_key = os.environ.get("GEMINI_API_KEY")
+async def call_ai_api(system_prompt: str, prompt: str) -> dict:
+    api_key = os.environ.get("GROQ_API_KEY")
     if not api_key:
-        raise Exception("GEMINI_API_KEY environment variable is not set")
+        raise Exception("GROQ_API_KEY environment variable is not set")
 
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={api_key}"
+    url = "https://api.groq.com/openai/v1/chat/completions"
 
     headers = {
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {api_key}"
     }
 
     payload = {
-        "systemInstruction": {
-            "parts": [{"text": system_prompt}]
-        },
-        "contents": [
-            {
-                "parts": [{"text": prompt}]
-            }
+        "model": "llama-3.3-70b-versatile",
+        "messages": [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": prompt}
         ],
-        "generationConfig": {
-            "responseMimeType": "application/json"
-        }
+        "response_format": {"type": "json_object"},
+        "temperature": 0.7
     }
 
     async with httpx.AsyncClient() as client:
         response = await client.post(url, headers=headers, json=payload, timeout=60.0)
 
         if response.status_code != 200:
-            print(f"Gemini API Error: {response.status_code} - {response.text}")
-            raise Exception(f"Failed to call Gemini API: {response.status_code} - {response.text}")
+            print(f"Groq API Error: {response.status_code} - {response.text}")
+            raise Exception(f"Failed to call Groq API: {response.status_code} - {response.text}")
 
         data = response.json()
 
         try:
-            text_response = data['candidates'][0]['content']['parts'][0]['text']
+            text_response = data['choices'][0]['message']['content']
             return json.loads(text_response.strip())
         except (KeyError, IndexError, json.JSONDecodeError) as e:
-            print(f"Failed to parse Gemini response: {e}")
-            raise Exception("Invalid response format from Gemini")
+            print(f"Failed to parse Groq response: {e}")
+            raise Exception("Invalid response format from Groq")
 
 
 
@@ -93,7 +90,7 @@ async def create_interview_context(job_title: str, job_description: str, resume_
             candidate_name: John Doe
     """
     
-    return await call_gemini_api(SYSTEM_PROMPT, "Generate JSON output based on system instruction.")
+    return await call_ai_api(SYSTEM_PROMPT, "Generate JSON output based on system instruction.")
 
 
 async def evaluate_interview_answers(answers: list):
@@ -128,4 +125,4 @@ async def evaluate_interview_answers(answers: list):
          - If candidate didn't answer anything then mark score 0%, correct_answer 0 and improvment_area as it is provide.
     """
     
-    return await call_gemini_api(SYSTEM_PROMPT, "Generate JSON output based on system instruction.")
+    return await call_ai_api(SYSTEM_PROMPT, "Generate JSON output based on system instruction.")
