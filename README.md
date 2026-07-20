@@ -59,9 +59,10 @@ This `README.md` is designed as a **Master Interview Guide**. If you are reviewi
 * **The Choice:** I chose Groq API hosting Llama 3.3 70B over OpenAI.
 * **The Why:** **Time-to-First-Token (TTFT).** In a voice application, if there is a 3-second silence between the user finishing their answer and the AI speaking, the illusion of a conversation breaks. Groq uses proprietary hardware called LPUs (Language Processing Units) that generate text at ~800 tokens per second. The AI response is generated almost instantaneously.
 
-### Tradeoff 4: Lightweight Prompt RAG vs. Vector Database RAG
-* **The Choice:** For the company-specific questions, I used a Python dictionary to inject questions directly into the prompt instead of setting up a Vector Database like Qdrant.
-* **The Why:** For an MVP portfolio project with only a few companies, a Vector DB is over-engineering. However, in a production environment with 10,000 companies and millions of questions, a Vector DB is mandatory (see the Advanced Questions below for how this works).
+### Tradeoff 4: Hardcoded Python Dictionary vs. Vector Database (Qdrant)
+* **The Choice:** For the MVP, I used a hardcoded Python dictionary (`company_db.py`) to store company-specific interview questions. 
+* **The Why:** For a Vercel-deployed portfolio project with only a few FAANG companies, a local dictionary is fast, zero-dependency, and doesn't require API keys. 
+* **The "Don't Do This In Production" Defense:** If an interviewer asks, *"Why did you hardcode a dictionary?"* you must answer: *"Hardcoding data in the application layer is an anti-pattern for production. If I scaled this to 10,000 companies, the application memory would bloat and crash. In a real environment, I would decouple the data by migrating this dictionary to a Vector Database like Qdrant."*
 
 ---
 
@@ -115,10 +116,10 @@ If you are asked about GenAI, LLMs, or RAG in an interview, here are the exact a
 **Q: How exactly does a Vector Database find the right data during Retrieval?**
 > When a user queries a Vector Database, the backend converts their text query into a vector using an Embedding Model. The Vector DB then uses a mathematical formula—most commonly **Cosine Similarity** or **Euclidean Distance**—to measure the angle or distance between the query vector and millions of stored vectors. It returns the vectors with the smallest distance, which represents the most semantically similar text.
 
-**Q: Walk me through how you would scale your RAG pipeline to 1,000,000 company questions using Qdrant.**
-> I would build a two-part pipeline:
-> 1. **Offline Ingestion:** I would take a massive CSV of questions. I would run every question through an embedding model (like `all-MiniLM-L6-v2`) to turn it into a vector. I would upload those vectors to Qdrant, attaching metadata "payloads" (like `company="Google"` and `role="Frontend"`).
-> 2. **Real-Time Retrieval:** When a user starts an interview for Google Frontend, my backend embeds that query string. I query Qdrant using Cosine Similarity, but I apply a **Metadata Filter** to explicitly only search vectors where `company="Google"`. Qdrant returns the top 5 matches in milliseconds, which I inject into the LLM prompt.
+**Q: Walk me through how you would replace your hardcoded dictionary and scale your RAG pipeline to 1,000,000 company questions using Qdrant.**
+> I would rip out the Python dictionary and build a two-part pipeline:
+> 1. **Offline Ingestion:** I would take a massive CSV of questions. I would run every question through an embedding model (like `fastembed` or `all-MiniLM-L6-v2`) to turn it into a vector. I would upload those vectors to Qdrant Cloud, attaching metadata "payloads" (like `company="Google"` and `role="Frontend"`).
+> 2. **Real-Time Retrieval:** When a user starts an interview for Google Frontend, my FastAPI backend embeds that query string. I query Qdrant using Cosine Similarity, but I apply a **Metadata Filter** to explicitly only search vectors where `company="Google"`. Qdrant returns the top 5 matches in milliseconds, which I then inject into the LLM prompt.
 
 **Q: What is a 'Hallucination' and how did your architecture prevent it?**
 > A hallucination is when an LLM confidently fabricates false information. I mitigated this by heavily **grounding** the prompt. I explicitly pass the user's actual resume text and real company questions into the system prompt. I strictly instruct the model: *"Questions must be related ONLY to skills mentioned in the resume and job description."* By forcing the model to rely on provided context rather than its pre-trained memory, hallucinations are drastically reduced. 
