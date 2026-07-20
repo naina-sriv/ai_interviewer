@@ -31,6 +31,10 @@ async def init_interview_context(
     session.questions = context_data.get("questions")
     session.introText = context_data.get("introText")
 
+    # Crucial: Save the mutated session back to the store!
+    from ai_interview_service.store.session_store import session_store
+    session_store.save_session(session)
+
     return { "session_id": session.session_id }
 
 
