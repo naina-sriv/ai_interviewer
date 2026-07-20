@@ -31,9 +31,9 @@ export const useSpeechToText = (onSilence) => {
     }
 
     const recognition = new SpeechRecognition();
-    recognition.continous = true;
+    recognition.continuous = true;
     recognition.lang = "en-US";
-    recognition.interimResult = true;
+    recognition.interimResults = true;
 
     recognition.onresult = (event) => {
       let finalText = "";
