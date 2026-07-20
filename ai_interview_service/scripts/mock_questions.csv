@@ -1,0 +1,22 @@
+company,job_title,question
+google,Software Engineer,How would you design a scalable system like YouTube?
+google,Software Engineer,Explain the time and space complexity of your approach.
+google,Software Engineer,How do you handle distributed transactions across multiple microservices?
+google,Software Engineer,How would you implement a rate limiter?
+google,Product Manager,Design an alarm clock for the blind.
+amazon,Software Engineer,Tell me about a time you had to dive deep into a problem to find the root cause.
+amazon,Software Engineer,How would you design Amazon's shopping cart system?
+amazon,Software Engineer,Describe a situation where you had to disagree and commit.
+amazon,Software Engineer,Explain how you would handle thousands of concurrent orders during Prime Day.
+meta,Software Engineer,How would you design the news feed for Facebook?
+meta,Software Engineer,Explain how you would scale a real-time chat application.
+meta,Software Engineer,How do you handle data consistency across data centers?
+microsoft,Software Engineer,How would you design an online collaborative document editor like Office 365?
+microsoft,Software Engineer,Explain the principles of SOLID design.
+microsoft,Software Engineer,How do you approach debugging a memory leak in a large codebase?
+apple,Software Engineer,How would you design an API that millions of iOS devices will call simultaneously?
+apple,Software Engineer,Explain how you would ensure user data privacy in your architecture.
+apple,Software Engineer,How do you handle battery optimization in background processes?
+netflix,Software Engineer,How would you design a global video streaming service?
+netflix,Software Engineer,Explain chaos engineering and how you would test system resilience.
+netflix,Software Engineer,How do you handle eventual consistency in a microservices architecture?
