@@ -20,23 +20,26 @@ class SessionStore:
 
     def save_session(self, session: InterviewSession):
         if self.redis_client:
-            # Save to redis with a 24-hour expiration (86400 seconds)
-            self.redis_client.setex(
-                f"session:{session.session_id}",
-                86400,
-                session.model_dump_json()
-            )
-        else:
-            self.local_dict[session.session_id] = session
+            try:
+                self.redis_client.setex(
+                    f"session:{session.session_id}",
+                    86400,
+                    session.model_dump_json()
+                )
+                return
+            except Exception as e:
+                print(f"Redis save failed, using local storage: {e}")
+        self.local_dict[session.session_id] = session
 
     def get_session(self, session_id: str) -> Optional[InterviewSession]:
         if self.redis_client:
-            data = self.redis_client.get(f"session:{session_id}")
-            if data:
-                return InterviewSession.model_validate_json(data)
-            return None
-        else:
-            return self.local_dict.get(session_id)
+            try:
+                data = self.redis_client.get(f"session:{session_id}")
+                if data:
+                    return InterviewSession.model_validate_json(data)
+            except Exception as e:
+                print(f"Redis get failed, using local storage: {e}")
+        return self.local_dict.get(session_id)
 
 # Global instance
 session_store = SessionStore()
