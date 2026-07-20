@@ -1,3 +1,9 @@
+import os
+import sys
+
+# Ensure local modules can be imported when running in Vercel Serverless environment
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
 from fastapi import FastAPI
 from routers.interview import router as interview_router
 from fastapi.middleware.cors import CORSMiddleware
