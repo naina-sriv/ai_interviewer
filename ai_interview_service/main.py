@@ -8,7 +8,7 @@ if _dir not in sys.path:
 print(f"[AI Interviewer] Python path configured: {_dir}")
 
 from fastapi import FastAPI
-from routers.interview import router as interview_router
+from ai_interview_service.routers.interview import router as interview_router
 from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(
