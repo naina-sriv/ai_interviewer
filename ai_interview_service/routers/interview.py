@@ -1,5 +1,4 @@
 from fastapi import APIRouter, File, Form, HTTPException, UploadFile, status
-
 from ai_interview_service.models.interview import InteriewStatusEnum
 from ai_interview_service.request_model.AnswerRequest import AnswerRequest
 from ai_interview_service.response_model.AnswerResponse import AnswerResponse
@@ -27,7 +26,7 @@ async def init_interview_context(
 
     # Get company questions if company is provided
     from ai_interview_service.util.company_db import get_company_questions
-    company_questions = get_company_questions(company)
+    company_questions = get_company_questions(company, job_title)
 
     # Generate questions and intro text using title, decription, resume content, and company context
     context_data = await create_interview_context(
