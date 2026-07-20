@@ -69,6 +69,7 @@ const StartInterview = ({onClick}) => {
 
         } catch (error) {
             console.error("Error: ", error);
+            setError("Something went wrong. Please try again in a minute.");
         } finally {
              setLoading(false);
         }
