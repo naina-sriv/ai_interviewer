@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const BASE_URL = "http://localhost:8000/interview";
+const BASE_URL = process.env.NODE_ENV === "production" ? "/interview" : "http://localhost:8000/interview";
 
 export const startInterviewAPI = async (sessionId) => {
   try {

@@ -1,6 +1,6 @@
 import uuid
 from models.interview import Answer, InterviewSession, InteriewStatusEnum
-from store.session_store import SESSION_STORE
+from store.session_store import session_store
 
 
 def create_session() -> InterviewSession:
@@ -10,15 +10,11 @@ def create_session() -> InterviewSession:
         session_id=session_id
     )
 
-    SESSION_STORE[session_id] = interview_session
+    session_store.save_session(interview_session)
     return interview_session
 
 def get_session(session_id: str) -> InterviewSession:
-    session = SESSION_STORE.get(session_id)
-    if not session:
-        return None
-    
-    return session
+    return session_store.get_session(session_id)
 
 
 def save_answer(answer: str | None, skip: bool, session: InterviewSession):
@@ -36,3 +32,6 @@ def save_answer(answer: str | None, skip: bool, session: InterviewSession):
 
     if session.current_index == len(session.questions):
         session.status = InteriewStatusEnum.COMPLETED
+
+    # Crucial: Push the mutated session back to the store!
+    session_store.save_session(session)
