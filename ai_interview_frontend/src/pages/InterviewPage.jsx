@@ -97,6 +97,7 @@ const InterviewPage = () => {
                 startListening();
             })
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [status, question]);
 
     const startInterview = async (data, session_id) => {
