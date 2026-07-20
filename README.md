@@ -22,7 +22,7 @@ This `README.md` is designed as a **Master Interview Guide**. If you are reviewi
 ### Phase A: Initialization & Context Generation
 1. **User Input:** The candidate uploads their Resume (PDF), enters the Job Title, Job Description, and optionally, a Target Company (e.g., "Google").
 2. **Text Extraction:** FastAPI receives the `multipart/form-data`. It uses `PyPDF2` to extract the raw string text from the PDF.
-3. **Retrieval (RAG):** If the candidate typed "Google", the backend queries a local mock database (`company_db.py`) to retrieve real, historically asked Google interview questions.
+3. **Retrieval (RAG):** If the candidate typed "Google", the backend embeds the query and searches a **Qdrant Vector Database** to retrieve real, historically asked Google interview questions.
 4. **Prompt Assembly:** The backend constructs a massive System Prompt. It injects the Resume, Job Description, and the retrieved Google Questions. It sets strict formatting constraints (e.g., `response_format: { "type": "json_object" }`).
 5. **LLM Generation:** Groq processes the prompt and generates a personalized introduction script and 5 tailored questions.
 6. **State Storage:** The backend saves this state (the questions, the current index, the follow-up count) in **Redis** under a unique `session_id`. It returns the ID to the frontend.
@@ -59,10 +59,10 @@ This `README.md` is designed as a **Master Interview Guide**. If you are reviewi
 * **The Choice:** I chose Groq API hosting Llama 3.3 70B over OpenAI.
 * **The Why:** **Time-to-First-Token (TTFT).** In a voice application, if there is a 3-second silence between the user finishing their answer and the AI speaking, the illusion of a conversation breaks. Groq uses proprietary hardware called LPUs (Language Processing Units) that generate text at ~800 tokens per second. The AI response is generated almost instantaneously.
 
-### Tradeoff 4: Hardcoded Python Dictionary vs. Vector Database (Qdrant)
-* **The Choice:** For the MVP, I used a hardcoded Python dictionary (`company_db.py`) to store company-specific interview questions. 
-* **The Why:** For a Vercel-deployed portfolio project with only a few FAANG companies, a local dictionary is fast, zero-dependency, and doesn't require API keys. 
-* **The "Don't Do This In Production" Defense:** If an interviewer asks, *"Why did you hardcode a dictionary?"* you must answer: *"Hardcoding data in the application layer is an anti-pattern for production. If I scaled this to 10,000 companies, the application memory would bloat and crash. In a real environment, I would decouple the data by migrating this dictionary to a Vector Database like Qdrant."*
+### Tradeoff 4: Local Vector Database (Qdrant) vs. Hardcoded Dictionary
+* **The Choice:** I implemented a real **Qdrant Vector Database** RAG pipeline using `fastembed` instead of a hardcoded Python dictionary.
+* **The Why:** Hardcoding data in the application layer is an anti-pattern for production. If I scaled this to 10,000 companies, the application memory would bloat and crash. By decoupling the data and migrating it to a Vector Database, the application is highly scalable and production-ready.
+* **How it works:** An offline ingestion script embeds the questions into vectors. At runtime, the FastAPI backend embeds the user's query and performs a Cosine Similarity search in Qdrant, filtering by the company's metadata.
 
 ---
 
