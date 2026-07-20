@@ -66,22 +66,42 @@ export const playAudio = (text, onEnd) => {
     return;
   }
 
-  let utterance = new SpeechSynthesisUtterance(text);
-  utterance.lang = "en-US";
-  utterance.rate = 0.95; // Slightly slower for natural pacing
-  utterance.volume = 1;
-  utterance.pitch = 1.05; // Slightly higher for warmth
+  // Cancel any ongoing speech first
+  window.speechSynthesis.cancel();
 
-  // Use the best available human-like voice
-  const voice = getHumanVoice();
-  if (voice) {
-    utterance.voice = voice;
-  }
+  // Small delay to let cancel() complete (fixes Chrome bug)
+  setTimeout(() => {
+    let utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = "en-US";
+    utterance.rate = 0.95;
+    utterance.volume = 1;
+    utterance.pitch = 1.05;
 
-  utterance.onend = () => {
-    onEnd?.();
-  };
+    // Use the best available human-like voice
+    const voice = getHumanVoice();
+    if (voice) {
+      utterance.voice = voice;
+    }
 
-  window.speechSynthesis.cancel(); // stop previous speech
-  window.speechSynthesis.speak(utterance);
+    utterance.onend = () => {
+      onEnd?.();
+    };
+
+    utterance.onerror = (e) => {
+      console.error("Speech synthesis error:", e);
+      onEnd?.();
+    };
+
+    window.speechSynthesis.speak(utterance);
+
+    // Chrome bug: long text gets cut off after ~15s. This keepalive prevents it.
+    const keepAlive = setInterval(() => {
+      if (!window.speechSynthesis.speaking) {
+        clearInterval(keepAlive);
+        return;
+      }
+      window.speechSynthesis.pause();
+      window.speechSynthesis.resume();
+    }, 10000);
+  }, 100);
 };
