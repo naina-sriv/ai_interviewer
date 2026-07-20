@@ -3,7 +3,10 @@
   "builds": [
     {
       "src": "ai_interview_frontend/package.json",
-      "use": "@vercel/static-build"
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "build"
+      }
     },
     {
       "src": "ai_interview_service/main.py",
