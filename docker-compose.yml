@@ -1,0 +1,27 @@
+services:
+  backend:
+    build: ./ai_interview_service
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./ai_interview_service:/app
+    environment:
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+    networks:
+      - smart-interview-net
+
+  frontend:
+    build: ./ai_interview_frontend
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./ai_interview_frontend:/app
+      - /app/node_modules
+    networks:
+      - smart-interview-net
+    depends_on:
+      - backend
+
+networks:
+  smart-interview-net:
+    driver: bridge
